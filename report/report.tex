@@ -1,0 +1,789 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage[T1]{fontenc}
+\usepackage[english]{datetime2}
+\usepackage[format=hang]{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{algorithmic}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{cite}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{listing}
+\usepackage{pgffor}
+\usepackage{subcaption}
+\usepackage{textcomp}
+\usepackage{xcolor}
+
+\IfFileExists{inconsolata.sty}{\usepackage{inconsolata}}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\graphicspath{{../src/results/}}
+
+\newcommand{\code}[1]{\small\texttt{#1}\normalsize}
+
+\definecolor{codegray}{gray}{0.9}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{inputpath={{../src/results/}}}
+\lstdefinestyle{numbers} {numbers=left, numberstyle=\ttfamily}
+\lstdefinestyle{color}
+{
+    commentstyle=\color{dkgreen},
+    keywordstyle=\color{blue},
+    stringstyle=\color{mauve},
+}
+
+\lstdefinestyle{common}
+{
+    breakatwhitespace=false,
+    breaklines=true,
+    columns=fixed,
+    showstringspaces=false,
+    xleftmargin=0.65cm,
+    basicstyle=\footnotesize\ttfamily,
+    tabsize=4,
+    postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+    literate={*}{*\allowbreak}1
+}
+
+\lstdefinestyle{code} {style=common, style=color, style=numbers}
+\lstdefinestyle{raw} {style=common, style=color}
+
+\captionsetup[subfigure]{labelformat=empty}
+\setlength{\fboxsep}{0pt}
+
+\begin{document}
+
+\title{Machine Perception (COMP3007)\\Assignment 1\\}
+
+\author{\IEEEauthorblockN{Julian Heng}
+\IEEEauthorblockA{\textit{19473701}\\
+\textit{Curtin University}\\
+Perth, Australia\\
+19473701@student.curtin.edu.au} }
+
+
+\maketitle
+
+\section{Task 1}
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \fname in {20_rotate, 2.0x_scale}
+        {
+            \includegraphics[
+                width=0.4\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_1/diamond/diamond2_\fname}.png}
+        }
+    }
+    \caption{The rotated and scaled diamond image.}
+    \label{fig:diamond-rotate-scaled}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \foreach \fname in {20_rotate, 2.0x_scale}
+    {
+        \begin{subfigure}[p]{0.8\columnwidth}
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_1/dugong/Dugong_\fname}.jpg}
+            \caption{}
+        \end{subfigure}
+    }
+    \caption{The rotated and scaled diamond image.}
+    \label{fig:dugong-rotate-scaled}
+\end{figure}
+
+\subsection{Image Histograms}
+\subsubsection{Hypothesis}
+When an image is scaled or rotated, it will remain invariant to histograms.
+This is because scaling or rotating an image should no change the proportion
+between colors of the original image and the modified image. See figure
+~\ref{fig:diamond-rotate-scaled} and ~\ref{fig:dugong-rotate-scaled}.
+
+For example, applying a 2 times scale on an image on both the height and width
+should quadruple pixel count per pixel. While this would increase the number of
+overall pixels for that color space, the proportions between the original image
+and the scaled image remains unchanged.
+
+Using a rotated image as an example, a 90 degrees rotation would contain the
+same pixel arrangement as the original image, thus the proportions should stay
+exactly the same.
+
+
+\subsubsection{Results}
+The proportions of the modified image color spaces varies slightly, but not
+enough to consider them variant, thus image rotation and scaling are invariant.
+See figure ~\ref{fig:diamond-hist} and ~\ref{fig:dugong-hist}.
+
+\begin{figure}[!ht]
+    \foreach \fname in {original, 20_rotate, 2.0x_scale}
+    {
+        \centerline{
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+                scale=0.5,
+            ]{{task_1/diamond/diamond2_\fname_histogram}.png}
+        }
+    }
+    \caption{The original, rotated and scaled diamond histogram.}
+    \label{fig:diamond-hist}
+
+    \foreach \fname in {original, 20_rotate, 2.0x_scale}
+    {
+        \centerline{
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+                scale=0.5,
+            ]{{task_1/dugong/Dugong_\fname_histogram}.jpg}
+        }
+    }
+    \caption{The original, rotated and scaled dugong histogram.}
+    \label{fig:dugong-hist}
+\end{figure}
+
+
+\subsubsection{Discussion and Issues}
+The hypothesis states that scale and rotation is invariant. The results shows
+that the hypothesis is mostly correct. Scaling an image where the pixel values
+are duplicated exactly would lead to the same proportions between the two
+histograms, but some scaling algorithms, such as bilinear scaling, interpolates
+the pixels such that it would smoothen the image after scaling. As a result,
+this would lead to a difference in proportion between the two histograms.
+
+Other issues include the rotation of an image. When rotating an image in steps
+of 90 degrees, the histograms between the images maintains the same
+proportions. However on other angles, black pixels are used to fill in the
+space between the border and the image edge, thus introducing a large influx
+of black pixels which skews the histograms towards the left.
+
+
+\subsection{Harris Corner Detection}
+\subsubsection{Hypothesis}
+When an image is scaled or rotated, using the Harris corner detection will
+lead to different results to the original image. This is because of how the
+Harris corner algorithm checks the change of pixel intensity in changes
+between the x-axis and y-axis. See figure ~\ref{fig:diamond-rotate-scaled} and
+~\ref{fig:dugong-rotate-scaled}.
+
+
+\subsubsection{Results}
+Scaled images are variant, whereas rotated images are invariant. See figure
+~\ref{fig:diamond-harris} and ~\ref{fig:dugong-harris}.
+
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \fname in {original, 20_rotate, 2.0x_scale}
+        {
+            \includegraphics[
+                width=0.267\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_1/diamond/diamond2_\fname_harris}.png}
+        }
+    }
+    \caption{The original, rotated and scaled diamond Harris corners.}
+    \label{fig:diamond-harris}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={3cm 3cm 3cm 3cm},clip,
+        ]{{task_1/dugong/Dugong_original_harris}.jpg}
+        \caption{}
+    \end{subfigure}
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={1cm 1cm 1cm 1cm},clip,
+        ]{{task_1/dugong/Dugong_45_rotate_cropped_harris}.jpg}
+        \caption{}
+    \end{subfigure}
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={9cm 9cm 9cm 9cm},clip,
+        ]{{task_1/dugong/Dugong_2.0x_scale_harris}.jpg}
+        \caption{}
+    \end{subfigure}
+    \caption{The original, rotated and scaled dugong Harris corners.}
+    \label{fig:dugong-harris}
+\end{figure}
+
+
+\subsubsection{Discussion and Issues}
+The hypothesis states that the scale and rotation is variant. The results shows
+that the hypothesis is incorrect. Harris corner identifies corners by detecting
+changes in intensity of edges when shifting a viewport by the x-axis and
+y-axis. As a result, a rotated image still contains the same edges from the
+original image. Thus, Harris corner detection is still able to detect the
+change in intensity of an edge no matter what orientation that edge is. Hence,
+a rotated image is invariant.
+
+However, a scaled image is variant because a change in scaling may misled
+Harris corner detection to erroneously detect a scaled edge to be a corner,
+in the case that an image is scaled down. It may also be unable to detect the
+same corner of an upscaled image because the corner might be detected as an
+edge.
+
+One issue with the rotated Dugong image would be that the black background
+fill interferes with the Harris corner detection, requiring a crop in order
+to validate if a rotated image is invariant.
+
+Other issues include having Harris corner incorrectly detecting the edges
+on an image's border. For example, the black corner on the diamond card.
+
+
+\subsection{Scale Invariant Feature Transform Key Points}
+\subsubsection{Hypothesis}
+When an image is scaled or rotated, using SIFT will be able to detect the
+same features as the original image. See figure
+~\ref{fig:diamond-rotate-scaled} and ~\ref{fig:dugong-rotate-scaled}.
+
+
+\subsubsection{Results}
+Though some of the key points within the groups differ between the original
+and modified image, SIFT is capable of identifying the same features on
+both images. Therefore, scaling and rotation is invariant to SIFT. See figure
+~\ref{fig:diamond-sift} and ~\ref{fig:dugong-sift}.
+
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \fname in {original, 20_rotate, 2.0x_scale}
+        {
+            \includegraphics[
+                width=0.267\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_1/diamond/diamond2_\fname_sift}.png}
+        }
+    }
+    \caption{The original, rotated and scaled diamond detected SIFT keypoints.}
+    \label{fig:diamond-sift}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={3cm 3cm 3cm 3cm},clip,
+        ]{{task_1/dugong/Dugong_original_sift}.jpg}
+        \caption{}
+    \end{subfigure}
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={1cm 1cm 1cm 1cm},clip,
+        ]{{task_1/dugong/Dugong_45_rotate_cropped_sift}.jpg}
+        \caption{}
+    \end{subfigure}
+    \begin{subfigure}[p]{0.8\columnwidth}
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+            trim={9cm 9cm 9cm 9cm},clip,
+        ]{{task_1/dugong/Dugong_2.0x_scale_sift}.jpg}
+        \caption{}
+    \end{subfigure}
+    \caption{The original, rotated and scaled dugong detected SIFT keypoints.}
+    \label{fig:dugong-sift}
+\end{figure}
+
+
+\subsubsection{Discussion and Issues}
+The hypothesis states that the scale and rotation is invariant. The results
+shows that the hypothesis is correct. SIFT is able to detect the same features
+on all of the different variants of scaling and rotation as the original
+image.
+
+However, with extreme transformations such as a large scaling factor
+or a large angle of rotation, SIFT's detection of key points differ to the
+original image's key points coordinates, but are detecting the same features.
+
+
+\section{Task 2}
+\subsection{Local Binary Patterns}
+\subsubsection{Main Steps}
+The main steps of Local Binary Patterns are as follows:
+\begin{enumerate}
+    \item Convert image to grayscale.
+    \item Divide the image into many cells of size 16x16\cite{lbp-3}.
+    \item For each pixel in each cell in the image, compare the luminance of
+          the pixel to the surrounding 8 pixels.
+    \item On the surrounding pixels, set 0 if the pixel value is less than the
+          center pixel, otherwise set to 1.
+    \item For each pixel in each cell in the image, starting from the top left
+          pixel in a clockwise direction, set the pixel value to the 8-bit
+          binary number the surrounding pixels form\cite{lbp-1}\cite{lbp-2}.
+    \item For each cell in the image, calculate the histogram of the cell with
+          a bin size of 256.
+    \item For each cell in the image, normalise the histogram.
+    \item Concatenate the histograms of each cell into a single vector, which
+          forms the feature descriptors for the image\cite{lbp-3}\cite{lbp-1}.
+\end{enumerate}
+
+
+%Source: [https://www.bytefish.de/blog/local_binary_patterns.html](https://www.bytefish.de/blog/local_binary_patterns.html)
+%Accessed: 28/9/2020
+%
+%Source: [https://www.pyimagesearch.com/2015/12/07/local-binary-patterns-with-python-opencv/](https://www.pyimagesearch.com/2015/12/07/local-binary-patterns-with-python-opencv/)
+%Accessed: 28/9/2020
+%
+%Source: [https://en.wikipedia.org/wiki/Local_binary_patterns](https://en.wikipedia.org/wiki/Local_binary_patterns)
+%Accessed: 29/9/2020
+
+
+\subsubsection{Advantages}
+Local Binary Patterns algorithm is computationally light to perform.  It's a
+simple check for the intensity for all neighbouring pixels.  Thus, it is very
+fast to calculate\cite{lbp-4}.
+
+Local Binary Patterns algorithm is very simple and does not require any image
+filters, or rescaling.
+
+Local Binary Patterns algorithm is invariant to photometric
+transformations\cite{lbp-4}.
+
+
+\subsubsection{Disadvantages}
+The Local Binary Patterns algorithm is variant against rotation. When an image
+is rotated, the binary encoding will be shifted, and thus creating a different
+binary number when placed into the histogram, thus it is variant to
+rotation\cite{lbp-4}.
+
+The Local Binary Patterns algorithm constructs a large histogram with a bin
+size of 256\cite{lbp-2}, which can increase the computation time required to
+utilise this histogram.
+
+The Local Binary Patterns algorithm compares the center pixel to only it's
+neighbouring pixels, thus would not be able to capture other dominant features
+nearby\cite{lbp-5}. This can be remedied by applying an extension to Local
+Binary Patterns that defines a variable neighbourhood size\cite{lbp-2}.
+
+
+%Source: [http://biomisa.org/uploads/2016/10/Lect-15.pdf](http://biomisa.org/uploads/2016/10/Lect-15.pdf)
+%Accessed: 29/9/2020
+%
+%Source: [https://www.pyimagesearch.com/2015/12/07/local-binary-patterns-with-python-opencv/](https://www.pyimagesearch.com/2015/12/07/local-binary-patterns-with-python-opencv/)
+%Accessed: 29/9/2020
+%
+%Source: [https://www.computer.org/csdl/proceedings-article/icnc/2008/3304d115/12OmNx5Yvs6](https://www.computer.org/csdl/proceedings-article/icnc/2008/3304d115/12OmNx5Yvs6)
+%Accessed: 29/9/2020
+
+
+\subsection{Histogram of Oriented Gradients}
+\subsubsection{Main Steps}
+The main steps of Histogram of Oriented Gradients are as follows:
+\begin{enumerate}
+    \item Process the image by cropping it to a 1:2 aspect ratio\cite{hog-1}.
+    \item Calculate the gradients along the x-axis and y-axis using the Sobel
+          operator.
+    \item From the gradients, calculate the gradient angle and
+          magnitude\cite{hog-3}.
+    \item Divide the image into cells of equal sizes.
+    \item For each pixel in each cell, select an appropriate bin using the
+          gradient direction.
+    \item If the angle matches a bin, record the entire magnitude for that bin,
+          otherwise separate the magnitude to record in between the two bins.
+    \item Normalize the resulting histogram.
+    \item Calculate the resulting feature vector by concatenating every
+          histograms.
+\end{enumerate}
+
+
+%Source: [https://www.learnopencv.com/histogram-of-oriented-gradients/](https://www.learnopencv.com/histogram-of-oriented-gradients/)
+%Accessed: 29/9/2020
+%
+%Source: [http://mccormickml.com/2013/05/09/hog-person-detector-tutorial/](http://mccormickml.com/2013/05/09/hog-person-detector-tutorial/)
+%Accessed: 29/9/2020
+%
+%Source: [https://chrisjmccormick.wordpress.com/2013/05/07/gradient-vectors/](https://chrisjmccormick.wordpress.com/2013/05/07/gradient-vectors/)
+%Accessed: 29/9/2020
+
+
+\subsubsection{Advantages}
+Histogram of Oriented Gradients algorithm provides a good descriptor for
+detecting a person\cite{hog-1}.
+
+Histogram of Oriented Gradients algorithm is computationally light to compute
+when compared with Scale Invariant Feature Transform.
+
+Histogram of Oriented Gradients algorithm is invariant to geometric and
+photometric transformations\cite{hog-2}\cite{hog-3}.
+
+
+\subsubsection{Disadvantages}
+Histogram of Oriented Gradients will produce a larger histogram on larger
+images, which increases the computation time required to utilise the histogram.
+
+Histogram of Oriented Gradients is variant to scaling and rotation.
+
+
+\subsection{Scale Invariant Feature Transform}
+\subsubsection{Main Steps}
+The main steps of Scale Invariant Feature Transform are as
+follows\cite{sift-1}\cite{sift-2}:
+\begin{enumerate}
+    \item Create the scale space by creating multiple different octaves of the
+          image.
+    \item Each octaves contains the image of the same size, but with increasing
+          scale, which is the kernel size for the Gaussian filter applied to the
+          image.
+    \item Calculate the difference of Gaussian for each octave by comparing the
+          pixel value between the scales.
+    \item Find all of the discrete extrema within the image by comparing a
+          pixel with all of the surrounding neighbors, including the different
+          scales.
+    \item For each key points in the image, convert the discrete coordinates of
+          the key point to a continuous coordinate by using the Taylor
+          expansion of the image around the extrema.
+    \item Remove any key points that contains low contrast or is an edge by
+          using a technique similar to Harris corner detection.
+    \item For each key points, perform Histogram of Oriented Gradients on the
+          surrounding area of the key points, with a bin size of 36 for full
+          360 degrees with 10 degrees per bin.
+    \item For each bin in the histogram, if it is higher than 80\% of the
+          highest peak, create a new key point in the same location and with the
+          same magnitude, but with the same direction as the highest peak.
+    \item For each key points, generate a feature vector by extracting a 16x16
+          window with the key point at the center, dividing the window into 16
+          4x4 cells and perform a Histogram of Oriented Gradients with a bin
+          size of 8 with 45 degrees in each bin.
+    \item For each key points, concatenate and normalise each of the cells'
+          histograms to form a vector of 128 values.
+\end{enumerate}
+
+
+%Source: [https://aishack.in/tutorials/sift-scale-invariant-feature-transform-introduction/](https://aishack.in/tutorials/sift-scale-invariant-feature-transform-introduction/)
+%Accessed: 29/9/2020
+%
+%Source: [http://weitz.de/sift/index.html](http://weitz.de/sift/index.html)
+%Accessed: 29/9/2020
+
+
+\subsubsection{Advantages}
+Scale Invariant Feature Transform performs very well, yielding high accuracy
+when comparatively to other feature descriptors.
+
+Scale Invariant Feature Transform is able to detect feature key points and
+descriptors of a rotated or scaled image, within reason.
+
+
+\subsubsection{Disadvantages}
+Scale Invariant Feature Transform is computationally expensive. It requires
+constructing a scale space, which requires multiple Gaussian and downscaling
+operations\cite{sift-1}.
+
+Scale Invariant Feature Transform is also variant to scale and rotation at
+extreme values.
+
+
+\subsection{Similarities}
+\begin{itemize}
+    \item All three algorithms calculates the descriptor vector though
+          concatenating the calculated histograms in each cell.
+
+    \item All three algorithms incorporates the use of a sliding window to
+          process the image.
+\end{itemize}
+
+\subsection{Differences}
+\begin{itemize}
+    \item Scale Invariant Feature Transform is a feature descriptor and feature
+          detector whereas Local Binary Patterns and Histogram of Oriented
+          Gradients are feature descriptors only.
+
+    \item Scale Invariant Feature Transform creates a scale space to detect key
+          points whereas Local Binary Patterns and Histogram of Oriented
+          Gradients operate in a cell by cell process.
+
+    \item Local Binary Patterns and Scale Invariant Feature Transform are local
+          algorithms whereas Histogram of Oriented Gradients is not.
+
+    \item Local Binary Patterns does not calculate the gradient of a pixel
+          whereas Histogram of Oriented Gradients and Scale Invariant Feature
+          Transform does.
+\end{itemize}
+
+
+\subsection{Discussion and Issues}
+\subsubsection{Histogram of Oriented Gradients}
+Histogram of Oriented Gradients is unable to describe the same feature of an
+image that is scaled or rotated. The difference in distance between the two
+histograms created by the original image and the modified image not close.
+Most distances are around 0.5 and the max distance being 1.48.
+
+An issue encountered would be that rotated images have a black filler on the
+border of the image. It is not clear if this affects the histogram calculated
+by HOG. A crop was applied in order to remove the black border, but now brings
+up the issue of whether the crop would also affect the resulting histogram.
+
+\begin{figure}[!ht]
+    \foreach \fname in {original, 45_rotate, 2.0x_scale}
+    {
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+        ]{{task_2/diamond/diamond2_\fname_hog}.png}
+    }
+    \caption{
+        Comparison of the HOG descriptors between the original and modified
+        diamond image.
+    }
+\end{figure}
+
+\begin{figure}[!ht]
+    \foreach \fname in {original, 20_rotate_cropped, 2.0x_scale}
+    {
+        \includegraphics[
+            width=\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+        ]{{task_2/dugong/Dugong_\fname_hog}.jpg}
+    }
+    \caption{
+        Comparison of the HOG descriptors between the original and modified
+        dugong image.
+    }
+\end{figure}
+
+
+\subsubsection{Scale Invariant Feature Transform}
+Scale Invariant Feature Transform is able to extract the same feature of an
+image that is scaled or rotated. Images that are rotated slightly contains the
+same feature key point and 
+
+An issue encountered involved the diamond image rotated 20 degrees. The best
+key point matches a diamond on the opposite side. This may be an issue with how
+there are too many similar objects, which causes SIFT to match against the
+opposite symbol. Cropping the image does not fix the issue. This issue also
+appears on the diamond image upscaled to 1.5 times.
+
+\begin{figure}[!ht]
+    \centering
+    \foreach \fname in {45_rotate, 2.0x_scale}
+    {
+        \begin{subfigure}[p]{0.5\columnwidth}
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_2/diamond/diamond2_\fname_sift}.png}
+            \caption{}
+        \end{subfigure}
+    }
+    \caption{The best matching key point from SIFT on the diamond image.}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \foreach \fname in {20_rotate, 2.0x_scale}
+    {
+        \begin{subfigure}[p]{\columnwidth}
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+                trim={9cm 10cm 12cm 6cm},clip,
+            ]{{task_2/dugong/Dugong_\fname_sift}.jpg}
+            \caption{}
+        \end{subfigure}
+    }
+    \caption{The best matching key point from SIFT on the dugong image.}
+\end{figure}
+
+
+\section{Task 3}
+\subsection{Diamond}
+\begin{figure}[H]
+    \centerline{
+        \fbox{\includegraphics[
+            scale=0.4,
+            keepaspectratio,
+        ]{{task_3/diamond/diamond2_original_binary}.png}}
+    }
+    \caption{The binary diamond image.}
+    \label{fig:diamond-binary}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \x in {1, ..., 7}
+        {
+            \fbox{\includegraphics[
+                scale=0.4,
+                keepaspectratio,
+            ]{{task_3/diamond/diamond2_original_connected_components/diamond2_ccl_\x}.png}}
+        }
+    }
+    \centering
+    \caption{The connected components of the diamond image. Leftmost is component 1 and increases to the right.}
+    \label{fig:diamond-connected-components}
+\end{figure}
+
+\lstinputlisting[
+    language={},
+    style=raw
+]{task_3/diamond/diamond2_original_connected_components/stats.txt}
+
+
+\subsection{Dugong}
+\begin{figure}[H]
+    \centerline{
+        \fbox{\includegraphics[
+            scale=0.25,
+            keepaspectratio,
+        ]{{task_3/dugong/Dugong_red-only_binary}.jpg}}
+    }
+    \caption{The binary dugong image.}
+    \label{fig:dugong-binary}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \x in {1, 2}
+        {
+            \fbox{\includegraphics[
+                scale=1,
+                keepaspectratio,
+            ]{task_3/dugong/Dugong_red-only_connected_components/Dugong_ccl_\x.jpg}}
+        }
+    }
+    \centering
+    \caption{The connected components of the dugong image. Leftmost is component 1 and increases to the right.}
+    \label{fig:dugong-connected-components}
+\end{figure}
+
+\lstinputlisting[
+    language={},
+    style=raw
+]{task_3/dugong/Dugong_red-only_connected_components/stats.txt}
+
+
+\section{Task 4}
+\subsection{Methods}
+The following methods are tested:
+\begin{enumerate}
+    \item Original image
+    \item Red channel only
+    \item Red channel only with a Gaussian filter with kernel size 7
+\end{enumerate}
+
+\subsubsection{Diamond}
+The Diamond image works best with method 1 with k value of 2. With methods 2
+and 3, every channel except red is muted. Since the card's symbols is in red,
+the samples passed into the kmeans function would end up being detected by one
+cluster. However, method 3 is able to successfully segment the card symbols,
+possibly due to the Gaussian filter.
+
+\begin{figure}[!ht]
+    \centerline{
+        \includegraphics[
+            scale=0.5,
+            keepaspectratio,
+        ]{{task_4/diamond/diamond2_method_1_k_2_kmeans}.png}
+    }
+    \caption{The method 1 diamond image after kmeans is performed.}
+    \label{fig:diamond-kmeans}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centerline{
+        \foreach \x in {0, 1}
+        {
+            \includegraphics[
+                scale=0.5,
+                keepaspectratio,
+            ]{{task_4/diamond/diamond2_method_1_k_2_kmeans_cluster_\x}.png}
+        }
+    }
+    \caption{The segmented clusters of the method 1 diamond image.}
+    \label{fig:diamond-kmeans-clusters}
+\end{figure}
+
+
+\subsubsection{Dugong}
+The Dugong image works best with method 2 with k value of 2. With method 1, the
+ocean was part of the segment that contains the seaweed and the dugong. With
+method 3, while able to get similar results to method 2, contains the ocean as
+part of the dugong extracted.
+
+\begin{figure}[!ht]
+    \centerline{
+        \includegraphics[
+            width=0.8\columnwidth,
+            height=\textheight,
+            keepaspectratio,
+        ]{{task_4/dugong/Dugong_method_2_k_2_kmeans}.jpg}
+    }
+    \caption{The method 2 dugong image after kmeans is performed.}
+    \label{fig:dugong-kmeans}
+\end{figure}
+
+\begin{figure}[!ht]
+    \centering
+    \foreach \x in {0, 1}
+    {
+        \begin{subfigure}[p]{0.8\columnwidth}
+            \includegraphics[
+                width=\columnwidth,
+                height=\textheight,
+                keepaspectratio,
+            ]{{task_4/dugong/Dugong_method_2_k_2_kmeans_cluster_\x}.jpg}
+            \caption{}
+        \end{subfigure}
+    }
+    \caption{The segmented clusters of the method 2 dugong image.}
+    \label{fig:dugong-kmeans-clusters}
+\end{figure}
+
+\bibliographystyle{IEEEtranUrldate}
+\bibliography{report.bib}
+
+
+\section{Appendix}
+\lstset{inputpath={}}
+\foreach \x in {1, ..., 4}
+{
+    \subsection{Appendix \x: Task \x}
+    \lstinputlisting[language=python,style=code]{appendix_\x.txt}
+}
+
+\subsection{Appendix 5: Image class helper}
+\lstinputlisting[language=python,style=code]{appendix_5.txt}
+
+\subsection{Appendix 6: Runner code}
+\lstinputlisting[language=python,style=code]{appendix_6.txt}
+
+\end{document}
