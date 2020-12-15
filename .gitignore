@@ -1,0 +1,13 @@
+.venv/
+*.swp
+
+__pycache__
+
+report/*
+!report/report.tex
+!report/report.bib
+!report/make_appendix.sh
+!report/make_report.sh
+src/*.jpg
+src/*.png
+src/results
